@@ -1,0 +1,29 @@
+parameters:
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Command\StartCommand:
+        arguments:
+            $discordBotToken: '%env(DISCORD_BOT_TOKEN)%'
+
+    App\Command\FetchOfferCommand:
+        arguments:
+            $discordBotToken: '%env(DISCORD_BOT_TOKEN)%'
+
+    League\HTMLToMarkdown\HtmlConverterInterface:
+        class: League\HTMLToMarkdown\HtmlConverter
+
+    _instanceof:
+        App\Discord\Command\AbstractDiscordCommand:
+            tags:
+                - { name: 'app.discord.command' }
