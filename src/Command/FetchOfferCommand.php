@@ -35,8 +35,7 @@ class FetchOfferCommand extends Command
 
         $channels = $this->entityManager->getRepository(Channel::class)->findByIds($channelIds);
         $channelIds = [];
-        foreach ($channels as $channel)
-        {
+        foreach ($channels as $channel) {
             $channelIds[$channel->getChannelId()] = $channel;
         }
         $channels = $channelIds;
@@ -53,8 +52,8 @@ class FetchOfferCommand extends Command
             $maxOfferId = $lastOfferId;
             foreach ($urls as $url) {
                 $offers = $this->codeurBusiness->getOffers($url->getValue());
-                usort($offers, function (array $offer) {
-                    return $offer['guid'];
+                usort($offers, function (array $a, array $b) {
+                    return $a['guid'] <=> $b['guid'];
                 });
                 foreach ($offers as $offer) {
                     $currentId = $offer['guid'];
@@ -82,8 +81,8 @@ class FetchOfferCommand extends Command
                 'token' => $this->discordBotToken,
                 'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT | Intents::GUILD_MESSAGES | Intents::GUILDS,
             ]);
-            usort($offersToHandle, function (array $offer) {
-                return -$offer['guid'];
+            usort($offersToHandle, function (array $a, array $b) {
+                return $b['guid'] <=> $a['guid'];
             });
             $discord->on('ready', function (Discord $discord) use ($offersToHandle) {
                 $promises = [];
