@@ -2,6 +2,7 @@
 
 namespace App\Discord\Command;
 
+use App\Entity\Channel;
 use App\Entity\Url;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Command\Option;
@@ -42,7 +43,8 @@ class AddUrlCommand extends AbstractDiscordCommand
     {
         /** @var \Discord\Parts\Interactions\Request\Option $option */
         $option = $interaction->data->options->get('name', 'url');
-        $url = (new Url())->setValue($option->value)->setChannelId($interaction->channel_id);
+        $channel = $this->entityManager->getRepository(Channel::class)->findBy(['channelId' => $interaction->channel_id]) ?? (new Channel())->setChannelId($interaction->channel_id);
+        $url = (new Url())->setValue($option->value)->setChannel($channel);
         $this->entityManager->persist($url);
         $this->entityManager->flush();
         $interaction->respondWithMessage(MessageBuilder::new()->setContent('URL added successfully!'));

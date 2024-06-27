@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\ChannelRepository;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -19,6 +20,9 @@ class Channel
 
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $lastOfferId = 0;
+
+    #[ORM\OneToMany(targetEntity: Url::class, mappedBy: 'channel')]
+    private Collection $urls;
 
     public function getId(): ?int
     {
@@ -44,6 +48,17 @@ class Channel
     public function setLastOfferId(?int $lastOfferId): self
     {
         $this->lastOfferId = $lastOfferId;
+        return $this;
+    }
+
+    public function getUrls(): Collection
+    {
+        return $this->urls;
+    }
+
+    public function setUrls(Collection $urls): self
+    {
+        $this->urls = $urls;
         return $this;
     }
 }

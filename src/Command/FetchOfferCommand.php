@@ -29,52 +29,26 @@ class FetchOfferCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $urls = $this->entityManager->getRepository(Url::class)->findAll();
-        $channelIds = array_unique(array_map(function (Url $url) {
-            return $url->getChannelId();
-        }, $urls));
-
-        $channels = $this->entityManager->getRepository(Channel::class)->findByIds($channelIds);
-        $channelIds = [];
-        foreach ($channels as $channel) {
-            $channelIds[$channel->getChannelId()] = $channel;
-        }
-        $channels = $channelIds;
-        $urlsByChannels = [];
 
         foreach ($urls as $url) {
-            $urlsByChannels[$url->getChannelId()] = array_merge($urlsByChannels[$url->getChannelId()] ?? [], [$url]);
-        }
-
-        $offersToHandle = [];
-        foreach ($urlsByChannels as $channelId => $urls) {
-            $channel = $channels[$channelId] ?? (new Channel())->setChannelId($channelId);
-            $lastOfferId = $channel->getLastOfferId();
-            $maxOfferId = $lastOfferId;
-            foreach ($urls as $url) {
-                $offers = $this->codeurBusiness->getOffers($url->getValue());
-                usort($offers, function (array $a, array $b) {
-                    return $a['guid'] <=> $b['guid'];
-                });
-                foreach ($offers as $offer) {
-                    $currentId = $offer['guid'];
-
-                    if ($currentId <= $lastOfferId) {
-                        continue;
-                    }
-                    if ($currentId > $maxOfferId) {
-                        $maxOfferId = $currentId;
-                    }
-                    $offer['discord'] = [
-                        'channel' => $channel,
+            $offers = $this->codeurBusiness->getOffers($url->getValue());
+            $max = $url->getChannel()->getLastOfferId();
+            foreach ($offers as $offer) {
+                if ($offer['guid'] > $url->getChannel()->getLastOfferId()) {
+                    $offersToHandle[] = [
+                        'offer' => $offer,
                         'url' => $url,
                     ];
+                }
 
-                    $offersToHandle[] = $offer;
+                if ($offer['guid'] > $max) {
+                    $max = $offer['guid'];
                 }
             }
-            $channel->setLastOfferId($maxOfferId);
-            $this->entityManager->persist($channel);
+            $url->getChannel()->setLastOfferId($max);
+            $this->entityManager->persist($url);
         }
+
 
         if (!empty($offersToHandle)) {
             $discord = new Discord([
@@ -82,21 +56,19 @@ class FetchOfferCommand extends Command
                 'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT | Intents::GUILD_MESSAGES | Intents::GUILDS,
             ]);
             usort($offersToHandle, function (array $a, array $b) {
-                return $b['guid'] <=> $a['guid'];
+                return $b['offer']['guid'] <=> $a['offer']['guid'];
             });
             $discord->on('ready', function (Discord $discord) use ($offersToHandle) {
                 $promises = [];
-                foreach ($offersToHandle as $offer) {
+                foreach ($offersToHandle as ['offer' => $offer, 'url' => $url]) {
                     $message = $this->codeurBusiness->convertOfferToMarkdown($offer);
-                    $promises[] = $discord->getChannel($offer['discord']['channel']->getChannelId())->sendMessage($message);
+                    $promises[] = $discord->getChannel($url->getChannel()->getChannelId())->sendMessage($message);
                 }
 
                 all($promises)->done(function () use ($discord) {
                     $discord->close();
                 });
             });
-
-
             $discord->run();
         }
         $this->entityManager->flush();

@@ -17,8 +17,8 @@ class Url
     #[ORM\Column(type: Types::STRING)]
     private ?string $value = null;
 
-    #[ORM\Column(type: Types::STRING)]
-    private ?string $channelId = null;
+    #[ORM\ManyToOne(targetEntity: Channel::class, cascade: ['persist'], inversedBy: 'url')]
+    private Channel $channel;
 
     public function getId(): ?int
     {
@@ -36,14 +36,14 @@ class Url
         return $this;
     }
 
-    public function getChannelId(): ?string
+    public function getChannel(): Channel
     {
-        return $this->channelId;
+        return $this->channel;
     }
 
-    public function setChannelId(?string $channelId): self
+    public function setChannel(Channel $channel): self
     {
-        $this->channelId = $channelId;
+        $this->channel = $channel;
         return $this;
     }
 }
