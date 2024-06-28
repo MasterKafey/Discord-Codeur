@@ -32,21 +32,22 @@ class FetchOfferCommand extends Command
 
         foreach ($urls as $url) {
             $offers = $this->codeurBusiness->getOffers($url->getValue());
-            $max = $url->getChannel()->getLastOfferId();
+            $max = $url->getChannel()->getLastPublishedOfferDateTime();
             foreach ($offers as $offer) {
-                if ($offer['guid'] > $url->getChannel()->getLastOfferId()) {
+                $offerDateTime = new \DateTime($offer['pubDate']);
+                if ($offerDateTime > $url->getChannel()->getLastPublishedOfferDateTime()) {
                     $offersToHandle[] = [
                         'offer' => $offer,
                         'url' => $url,
                     ];
                 }
 
-                if ($offer['guid'] > $max) {
-                    $max = $offer['guid'];
+                if ($offerDateTime > $max) {
+                    $max = $offerDateTime;
                 }
             }
-            $url->getChannel()->setLastOfferId($max);
-            $this->entityManager->persist($url);
+            $url->getChannel()->setLastPublishedOfferDateTime($max);
+            $this->entityManager->persist($url->getChannel());
         }
 
 

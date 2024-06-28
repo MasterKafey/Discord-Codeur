@@ -18,11 +18,16 @@ class Channel
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $channelId = null;
 
-    #[ORM\Column(type: Types::INTEGER)]
-    private ?int $lastOfferId = 0;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private \DateTime $lastPublishedOfferDateTime;
 
     #[ORM\OneToMany(targetEntity: Url::class, mappedBy: 'channel')]
     private Collection $urls;
+
+    public function __construct()
+    {
+        $this->lastPublishedOfferDateTime = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -40,14 +45,14 @@ class Channel
         return $this;
     }
 
-    public function getLastOfferId(): ?int
+    public function getLastPublishedOfferDateTime(): \DateTime
     {
-        return $this->lastOfferId;
+        return $this->lastPublishedOfferDateTime;
     }
 
-    public function setLastOfferId(?int $lastOfferId): self
+    public function setLastPublishedOfferDateTime(\DateTime $lastPublishedOfferDateTime): self
     {
-        $this->lastOfferId = $lastOfferId;
+        $this->lastPublishedOfferDateTime = $lastPublishedOfferDateTime;
         return $this;
     }
 
