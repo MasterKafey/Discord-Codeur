@@ -4,7 +4,6 @@ namespace App\Command;
 
 use App\Business\CommandBusiness;
 use Discord\Discord;
-use Discord\WebSockets\Intents;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,7 +15,7 @@ class StartCommand extends Command
 {
     public function __construct(
         private readonly CommandBusiness $commandBusiness,
-        private readonly string $discordBotToken,
+        private readonly Discord $discord,
     )
     {
         parent::__construct();
@@ -24,30 +23,25 @@ class StartCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $discord = new Discord([
-            'token' => $this->discordBotToken,
-            'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT | Intents::GUILD_MESSAGES | Intents::GUILDS,
-        ]);
-
-        $discord->on('ready', function(Discord $discord) {
-            $discord->application->commands->freshen()->then(function ($commands) use ($discord) {
-                $promises = [];
-                foreach ($commands as $command) {
-                    $promises[] = $discord->application->commands->delete($command->id);
+        $this->discord->on('ready', function () {
+            $promises = [];
+            foreach ($this->discord->guilds as $guild) {
+                foreach ($guild->commands as $command) {
+                    /** @var \Discord\Parts\Interactions\Command\Command $command */
+                    $promises[] = $guild->commands->delete($command);
                 }
+            }
 
-                return all($promises);
-            })->then(function() use ($discord) {
-                $commands = $this->commandBusiness->getCommands($discord);
+            all($promises)->then(function () {
+                $commands = $this->commandBusiness->getCommands();
                 foreach ($commands as $command) {
-                    $discord->application->commands->save($command['discord']);
-                    $discord->listenCommand($command['discord']->name, $command['callback']);
+                    $this->discord->application->commands->save($command['discord']);
+                    $this->discord->listenCommand($command['discord']->name, $command['callback']);
                 }
             });
         });
 
-
-        $discord->run();
+        $this->discord->run();
 
         return Command::SUCCESS;
     }

@@ -12,16 +12,17 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Command\StartCommand:
-        arguments:
-            $discordBotToken: '%env(DISCORD_BOT_TOKEN)%'
-
     App\Command\FetchOfferCommand:
         arguments:
             $discordBotToken: '%env(DISCORD_BOT_TOKEN)%'
 
     League\HTMLToMarkdown\HtmlConverterInterface:
         class: League\HTMLToMarkdown\HtmlConverter
+
+    Discord\Discord:
+        factory: [ 'App\Factory\DiscordFactory', 'getDiscord' ]
+        arguments:
+            $discordBotToken: '%env(DISCORD_BOT_TOKEN)%'
 
     _instanceof:
         App\Discord\Command\AbstractDiscordCommand:
