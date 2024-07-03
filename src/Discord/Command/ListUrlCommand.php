@@ -37,7 +37,7 @@ class ListUrlCommand extends AbstractDiscordCommand
 
         $messages = implode("\n", array_map(function (Url $url) {
             return $url->getValue();
-        }, $channel->getUrls()));
+        }, $channel->getUrls()->toArray()));
 
         $interaction->respondWithMessage(MessageBuilder::new()->setContent($messages));
     }
