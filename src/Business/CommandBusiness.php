@@ -12,17 +12,23 @@ class CommandBusiness
     /** @var AbstractDiscordCommand[] */
     private array $commands = [];
 
+    public function __construct(
+        private readonly Discord $discord
+    ) {
+
+    }
+
     public function addCommand(AbstractDiscordCommand $command): void
     {
         $this->commands[] = $command;
     }
 
-    public function getCommands(Discord $discord): array
+    public function getCommands(): array
     {
         $commands = [];
         foreach ($this->commands as $command) {
             $commands[] = [
-                'discord' => new Command($discord, $command->getAttributes()),
+                'discord' => new Command($this->discord, $command->getAttributes()),
                 'callback' => function(Interaction $interaction) use ($command) {
                     $command->execute($interaction);
                 }
