@@ -9,7 +9,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class CodeurBusiness
 {
     public function __construct(
-        private readonly HttpClientInterface $client,
+        private readonly HttpClientInterface    $client,
         private readonly HtmlConverterInterface $htmlConverter,
     )
     {
@@ -39,6 +39,7 @@ class CodeurBusiness
             $description[] = trim($lines[$i]);
         }
         $description = preg_replace('/https?:\/\/[^\s]+/', '<$0>', implode("\n", $description));
+        $description = substr($description, 0, 1000);
         return "## [$title](<$link>)\n**{$pubDate->format('d/m/y H:i')}**\n```$description```";
     }
 }
